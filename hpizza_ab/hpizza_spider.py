@@ -19,7 +19,7 @@ class HPizzaSpider(CrawlSpider):
     allowed_domains = ["www.hardpizza.ru"]
     start_urls = ["http://www.hardpizza.ru/", ]
     rules = (
-        Rule(SgmlLinkExtractor(allow=('hardpizza', ),deny=('guestbook','diskont','oplat','component','/pizza/','/dostavka-rollov/','zakazat-rolly')), callback='parse_item', follow=False),
+        Rule(SgmlLinkExtractor(deny=('guestbook','diskont','oplat','component','/pizza/','/dostavka-rollov/','zakazat-rolly')), callback='parse_item', follow=False),
     )
     re_product_id = re.compile ('id=\"productPrice')
     sleep_time = 5
