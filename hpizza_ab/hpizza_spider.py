@@ -75,7 +75,9 @@ class HPizzaSpider(CrawlSpider):
                         q = q[:q.find('<')].strip()
                         portion_item['portion'] = q
                         portion_item['value'] = p
-                        wrk_url = "http://www.hardpizza.ru/index.php?option=com_virtuemart&nosef=1&view=productdetails&task=recalculate&virtuemart_product_id="+\
+                        p = self.start_urls[0].strip()
+                        p =  p if p.endswith('/') else p + '/'
+                        wrk_url = p+"index.php?option=com_virtuemart&nosef=1&view=productdetails&task=recalculate&virtuemart_product_id="+\
                                   product_conn_item['product_site_id'].strip()+"&format=json&amp;lang=ru&customPrice%255B0%255D%255B11%255D%3D"+portion_item['value']+\
                                   "%26quantity%255B%255D%3D1%26option%3Dcom_virtuemart%26virtuemart_product_id%255B%255D%3D"+product_conn_item['product_site_id'].strip()+\
                                   "%26virtuemart_manufacturer_id%3DArray%26"
