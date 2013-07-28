@@ -4,13 +4,6 @@ from django.db import models
 from gns_djangoitem import GnsDjangoItem
 from scrapy.item import Field
 
-class TestModel(models.Model):
-    number = models.IntegerField()
-    name = models.CharField(max_length=25)
-
-    def __unicode__(self):
-        return str(self.number) + ' ' + self.name
-
 class Product(models.Model):
     title = models.CharField(max_length=255) # Название блюда,  в рамках задачи считать сочитание полей title и restoran_id уникальным
     price = models.IntegerField(blank=True) # Цена наименьшей порции
