@@ -16,6 +16,7 @@ class Product(models.Model):
 class ProductItem(GnsDjangoItem):
     django_model = Product
     _key_fields = ['title','restoran']
+    pk = Field()
 
 class ProductPortion(models.Model):
     product = models.ForeignKey("Product")
@@ -29,6 +30,7 @@ class ProductPortionItem(GnsDjangoItem):
     django_model = ProductPortion
     _key_fields = ['product','portion']
     value = Field()
+    pk = Field()
 
     def get_minimal_price(self):
         try:
@@ -55,5 +57,33 @@ class ProductConnection(models.Model):
 
 class ProductConnectionItem(GnsDjangoItem):
     django_model = ProductConnection
+    pk = Field()
+
+def ReadAllItemsFromDB(restoran_obj):
+    product_items = []
+    product_conn_items = []
+    portion_items = []
+    for product in Product._default_manager.filter(restoran=restoran_obj):
+        product_items.append(ProductItem())
+        product_items[-1]['title']=product.title
+        product_items[-1]['restoran']=restoran_obj.pk
+        product_items[-1]['price']=product.price
+        product_items[-1]['pk']=product.pk
+        product_conn_items.append(ProductConnectionItem())
+        product_conn_items[-1]['product'] = product.pk
+        product_conn = product_conn_items[-1].set_items_for_model()
+        if not product_conn:
+            product_conn_items[-1]['product_site_id']=None
+            product_conn_items[-1]['pk']=0
+        else:
+            product_conn_items[-1]['pk']=product_conn.pk
+        for portion in ProductPortion._default_manager.filter(product=product):
+            portion_items.append(ProductPortionItem())
+            portion_items[-1]['product']=product.pk
+            portion_items[-1]['portion']=portion.portion
+            portion_items[-1]['price']=portion.price
+            portion_items[-1]['pk']=portion.pk
+    return (portion_items,product_conn_items,portion_items)
+
 
 
