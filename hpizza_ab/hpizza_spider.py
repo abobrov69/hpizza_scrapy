@@ -19,7 +19,6 @@ def _items_index1(items,field,value):
     return -1 if not item else items.index(item[0])
 
 def _items_index2(items,field1,value1,field2,value2):
-#    print field1,value1,field2,value2
     item = [i for i in items if (i[field1]==value1 and i[field2]==value2)]
     return -1 if not item else items.index(item[0])
 
@@ -29,10 +28,10 @@ class HPizzaSpider(CrawlSpider):
     allowed_domains = ["www.hardpizza.ru"]
     start_urls = ["http://www.hardpizza.ru/", ]
     rules = (
-        Rule(SgmlLinkExtractor(deny=('guestbook','diskont','oplat','component','/pizza/','/dostavka-rollov/','zakazat-rolly')), callback='parse_item', follow=True),
+        Rule(SgmlLinkExtractor(deny=('guestbook','diskont','oplat','component','/pizza/','/dostavka-rollov/','zakazat-rolly')), callback='parse_item',follow=False),
     )
     re_product_id = re.compile ('id=\"productPrice')
-    sleep_time = 18
+    sleep_time = 9
     findstr = 'salesPrice":"'
     valuestr = 'value="'
 
@@ -42,9 +41,6 @@ class HPizzaSpider(CrawlSpider):
         self.findstr_len = len(self.findstr)
         self.new_products_ind=100
         (self.restoran_item,self.prod_items,self.prod_conn_items,self.prod_port_items) = ReadAllItemsFromDB(restoran_mame)
-#        print self.prod_items[0]
-#        for i in [x for x in self.prod_port_items if x['product']==self.prod_items[0]['pk']] : print i
-#        assert False
         super (HPizzaSpider,self).__init__(*a, **kw)
 
     def parse_item (self, response):

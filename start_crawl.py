@@ -28,7 +28,7 @@ crawler.signals.connect(reactor.stop, signal=signals.spider_closed)
 crawler.configure()
 crawler.crawl(spider)
 crawler.start()
-log.start(logfile='crawl.txt',loglevel=log.DEBUG,logstdout=False)
+log.start(logfile='crawl.txt',loglevel=log.INFO,logstdout=False)
 reactor.run()
 
 

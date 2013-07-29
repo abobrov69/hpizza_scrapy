@@ -24,5 +24,5 @@ class HpizzaPipeline(object):
         else:
             item['product'] = self.product_objects[item['product']]
             item.save()
-        sleep(3)
+#        sleep(3)
         return item
