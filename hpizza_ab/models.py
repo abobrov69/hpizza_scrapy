@@ -47,6 +47,7 @@ class Restoran(models.Model):
 
 class RestoranItem(GnsDjangoItem):
     django_model = Restoran
+    pk = Field()
 
 class ProductConnection(models.Model):
     product = models.ForeignKey('Product')
@@ -59,16 +60,20 @@ class ProductConnectionItem(GnsDjangoItem):
     django_model = ProductConnection
     pk = Field()
 
-def ReadAllItemsFromDB(restoran_obj):
+def ReadAllItemsFromDB(restoran_name):
+    restoran_item = RestoranItem()
+    restoran_item['restoran_name'] = restoran_name
+    restoran_obj = restoran_item.save()
+    restoran_item['pk'] = restoran_obj.pk
     product_items = []
     product_conn_items = []
     portion_items = []
     for product in Product._default_manager.filter(restoran=restoran_obj):
         product_items.append(ProductItem())
         product_items[-1]['title']=product.title
-        product_items[-1]['restoran']=restoran_obj.pk
-        product_items[-1]['price']=product.price
         product_items[-1]['pk']=product.pk
+        product_items[-1]['restoran']=restoran_item['pk']
+        product_items[-1]['price']=product.price
         product_conn_items.append(ProductConnectionItem())
         product_conn_items[-1]['product'] = product.pk
         product_conn = product_conn_items[-1].set_items_for_model()
@@ -83,7 +88,7 @@ def ReadAllItemsFromDB(restoran_obj):
             portion_items[-1]['portion']=portion.portion
             portion_items[-1]['price']=portion.price
             portion_items[-1]['pk']=portion.pk
-    return (portion_items,product_conn_items,portion_items)
+    return (restoran_item,product_items,product_conn_items,portion_items)
 
 
 

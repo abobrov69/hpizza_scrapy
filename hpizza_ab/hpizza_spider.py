@@ -16,11 +16,12 @@ def _msg_encode(s):
 
 def _items_index1(items,field,value):
     item = [i for i in items if i[field]==value]
-    return 0 if not item else items.index(item[0])
+    return -1 if not item else items.index(item[0])
 
 def _items_index2(items,field1,value1,field2,value2):
-    item = [i for i in items if i[field1]==value1 and i[field2]==value2]
-    return 0 if not item else items.index(item[0])
+#    print field1,value1,field2,value2
+    item = [i for i in items if (i[field1]==value1 and i[field2]==value2)]
+    return -1 if not item else items.index(item[0])
 
 
 class HPizzaSpider(CrawlSpider):
@@ -28,26 +29,26 @@ class HPizzaSpider(CrawlSpider):
     allowed_domains = ["www.hardpizza.ru"]
     start_urls = ["http://www.hardpizza.ru/", ]
     rules = (
-        Rule(SgmlLinkExtractor(deny=('guestbook','diskont','oplat','component','/pizza/','/dostavka-rollov/','zakazat-rolly')), callback='parse_item', follow=False),
+        Rule(SgmlLinkExtractor(deny=('guestbook','diskont','oplat','component','/pizza/','/dostavka-rollov/','zakazat-rolly')), callback='parse_item', follow=True),
     )
     re_product_id = re.compile ('id=\"productPrice')
-    sleep_time = 8
+    sleep_time = 18
     findstr = 'salesPrice":"'
     valuestr = 'value="'
 
 
     def __init__(self, restoran_mame='Hard Pizza', *a, **kw):
-        restoran_item = RestoranItem()
-        restoran_item['restoran_name'] = restoran_mame
-        self.restoran_obj = restoran_item.save()
         self.valuestr_len = len(self.valuestr)
         self.findstr_len = len(self.findstr)
         self.new_products_ind=100
-        (self.prod_items,self.prod_conn_items,self.prod_port_items) = ReadAllItemsFromDB(self.restoran_obj)
+        (self.restoran_item,self.prod_items,self.prod_conn_items,self.prod_port_items) = ReadAllItemsFromDB(restoran_mame)
+#        print self.prod_items[0]
+#        for i in [x for x in self.prod_port_items if x['product']==self.prod_items[0]['pk']] : print i
+#        assert False
         super (HPizzaSpider,self).__init__(*a, **kw)
 
     def parse_item (self, response):
-        log.msg('Start parsing '+response.url,level=log.DEBUG,spider=self)
+        log.msg('Start parsing '+response.url,level=log.INFO,spider=self)
         hxs = HtmlXPathSelector(response)
         list_rows = hxs.select('//*[@class="row"]')
         product_items = []
@@ -61,26 +62,26 @@ class HPizzaSpider(CrawlSpider):
                 for i,product_str in enumerate(product_split[1:]):
                     product_item = ProductItem()
                     product_item['title'] = product_blocks[i].select('.//h3').extract()[0].replace (u'<h3>\r\n\t\t\t\t\t',u'').replace (u'\t\t\t\t\t\t\t\t\t\t</h3>',u'').strip()
-                    product_item['restoran'] = self.restoran_obj.pk
+                    product_item['restoran'] = self.restoran_item['pk']
                     product_ind = _items_index2(self.prod_items,'restoran',product_item['restoran'],'title',product_item['title'])
                     product_conn_item = ProductConnectionItem()
                     id = re.split('\"',product_str)[0]
-                    if not product_ind:
+                    if product_ind==-1:
                         product_item['pk']='new'+str(self.new_products_ind)
                         self.new_products_ind += 1
-                        log.msg(_msg_encode(u'New product "{0}" in restoran {1}'.format(unicode(product_item['title']),unicode(self.restoran_obj))),level=log.INFO,spider=self)
+                        log.msg(_msg_encode(u'New product "{0}" in restoran {1}'.format(unicode(product_item['title']),unicode(self.restoran_item['restoran_name']))),level=log.INFO,spider=self)
                         product_conn_item['product_site_id'] = id
                         product_conn_item['product'] = product_item['pk']
                         product_conn_item['pk']=0
                     else:
-                        product_item['pk'] = self.prod_items[product_ind]
-                        product_conn_item['product'] = product_conn_item['product']
+                        product_item['pk'] = self.prod_items[product_ind]['pk']
+                        product_conn_item['product'] = product_item['pk']
                         pr_conn_ind = _items_index1(self.prod_conn_items,'product',product_conn_item['product'])
                         product_conn_item['product_site_id'] = id
-                        if pr_conn_ind:
+                        if pr_conn_ind>-1:
                             if self.prod_conn_items[pr_conn_ind]['product_site_id'] != id:
                                 log.msg(_msg_encode(u'Site ID for product "{0}" in restoran {1} was changed. Old ID is {2}, new ID is {3}'.format(
-                                unicode(product_item['title']),unicode(self.restoran_obj),self.prod_conn_items[pr_conn_ind]['product_site_id'],id)),
+                                unicode(product_item['title']),unicode(self.restoran_item['restoran_name']),self.prod_conn_items[pr_conn_ind]['product_site_id'],id)),
                                 level=log.WARNING,spider=self)
                             product_conn_item['pk']= self.prod_conn_items[pr_conn_ind]['pk']
                         else:
@@ -110,13 +111,13 @@ class HPizzaSpider(CrawlSpider):
                         except ValueError:
                             q = 0
                         log.msg(_msg_encode(u'Portion "{2}" of product "{0}" in restoran {1}.'.format(
-                                unicode(product_item['title']),unicode(self.restoran_obj),unicode(portion_item['portion']))),
+                                unicode(product_item['title']),unicode(self.restoran_item['restoran_name']),unicode(portion_item['portion']))),
                                 level=log.DEBUG,spider=self)
-                        port_ind = _items_index2(self.prod_port_items,'product',portion_item['product'],'portion',portion_item['portion']) if product_ind else 0
-                        if port_ind:
-                            if self.prod_port_items[port_ind]['portion'] != q:
+                        port_ind = _items_index2(self.prod_port_items,'product',portion_item['product'],'portion',portion_item['portion']) if product_ind>-1 else -1
+                        if port_ind>-1:
+                            if self.prod_port_items[port_ind]['price'] != q:
                                 log.msg(_msg_encode(u'Price for portion "{4}" of product "{0}" in restoran {1} was changed. Old price is {2}, new price is {3}'.format(
-                                unicode(product_item['title']),unicode(self.restoran_obj),unicode(self.prod_port_items[port_ind]['price']),
+                                unicode(product_item['title']),unicode(self.restoran_item['restoran_name']),unicode(self.prod_port_items[port_ind]['price']),
                                 unicode(q),unicode(portion_item['portion']))),
                                 level=log.INFO,spider=self)
                             portion_item['pk'] = self.prod_port_items[port_ind]['pk']
@@ -128,8 +129,6 @@ class HPizzaSpider(CrawlSpider):
                     product_item['price'] = min([x['price'] for x in portion_items if x['product'] == product_item['pk']])
                     product_items.append(product_item)
                     pr_connection_items.append(product_conn_item)
-                    if a <2: a += 1
-                    else: return product_items+pr_connection_items+portion_items
-        log.msg('Finish parsing '+response.url,level=log.DEBUG,spider=self)
-        return items
+        log.msg('Finish parsing '+response.url,level=log.INFO,spider=self)
+        return [self.restoran_item]+product_items+pr_connection_items+portion_items
 
