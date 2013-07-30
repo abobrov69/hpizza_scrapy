@@ -1,18 +1,22 @@
-# Define your item pipelines here
-#
-# Don't forget to add your pipeline to the ITEM_PIPELINES setting
-# See: http://doc.scrapy.org/topics/item-pipeline.html
+# -*- coding: utf-8 -*-
+
+""" Модуль описывает механизм сохранения Item-ов, передающихся Scrapy-engine из Spider'а """
 
 from time import sleep
 from scrapy import log
 
 class HpizzaPipeline(object):
+    """ Класс, определяющий способ сохранения Item-ов, передающихся Scrapy-engine из Spider'а """
 
     def __init__(self):
         self.product_objects ={}
         self.restoran_obj = None
 
     def process_item(self, item, spider):
+        """ Сохраняет отдельный Item. Действия зависят от типа полученного Item'а.
+        При создании нового объекта в модели Product, являющегося ключевым для других типов, он сохраняется
+        в списке для дальнейшего использования.
+        """
         log.msg(' '.join(['PIPE - ',item.__class__.__name__,unicode(item).encode('cp1251')]),level=log.DEBUG)
         if item.__class__.__name__=='RestoranItem':
             if not self.restoran_obj:

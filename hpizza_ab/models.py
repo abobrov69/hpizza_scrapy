@@ -1,10 +1,15 @@
 # -*- coding: utf-8 -*-
 
+""" Модуль содержит описание моделей Django и соответствующих им Item'ов Scrapy, а также процедуру считывания
+всей информации из моделей в списки Item-ов.
+"""
+
 from django.db import models
 from gns_djangoitem import GnsDjangoItem
 from scrapy.item import Field
 
 class Product(models.Model):
+    """ Модель, содержащая блюда """
     title = models.CharField(max_length=255) # Название блюда,  в рамках задачи считать сочитание полей title и restoran_id уникальным
     price = models.IntegerField(blank=True) # Цена наименьшей порции
     restoran = models.ForeignKey("Restoran") # Ресторан, из которого взято блюдо (создайте модель самостоятельно).
@@ -14,11 +19,13 @@ class Product(models.Model):
         return ' | '.join([unicode(self.restoran),self.title,str(self.price)])
 
 class ProductItem(GnsDjangoItem):
+    """ Item, опписывающий блюда """
     django_model = Product
     _key_fields = ['title','restoran']
     pk = Field()
 
 class ProductPortion(models.Model):
+    """ Модель, содержащая порции """
     product = models.ForeignKey("Product")
     portion = models.CharField(max_length = 255) # Название порции. Например, 25cм, 35см, 45см, 400г, 681г, 1.2кг,  8 штук, 36 штук, ¼, ½ , ¾,
     price = models.IntegerField() # Цена порции.
@@ -27,6 +34,7 @@ class ProductPortion(models.Model):
         return ' / '.join([unicode(self.product),self.portion,unicode(self.price)])
 
 class ProductPortionItem(GnsDjangoItem):
+    """ Item, опписывающий порции """
     django_model = ProductPortion
     _key_fields = ['product','portion']
     value = Field()
@@ -40,16 +48,19 @@ class ProductPortionItem(GnsDjangoItem):
         return min([obj.price for obj in qs])
 
 class Restoran(models.Model):
+    """ Модель, содержащая рестораны """
     restoran_name = models.CharField(max_length=255)
 
     def __unicode__(self):
         return self.restoran_name
 
 class RestoranItem(GnsDjangoItem):
+    """ Item, опписывающий рестораны """
     django_model = Restoran
     pk = Field()
 
 class ProductConnection(models.Model):
+    """ Модель, содержащая ID блюд на сайте """
     product = models.ForeignKey('Product')
     product_site_id = models.CharField(max_length=10)
 
@@ -57,10 +68,12 @@ class ProductConnection(models.Model):
         return ' - '.join((unicode(self.product),self.product_site_id))
 
 class ProductConnectionItem(GnsDjangoItem):
+    """ Item, опписывающий ID блюд на сайте """
     django_model = ProductConnection
     pk = Field()
 
 def ReadAllItemsFromDB(restoran_name):
+    """ Считывает всю информацию по одному ресторану из моделей в набор списков соответствующих Item-ов """
     restoran_item = RestoranItem()
     restoran_item['restoran_name'] = restoran_name
     restoran_obj = restoran_item.save()

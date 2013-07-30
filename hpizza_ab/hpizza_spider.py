@@ -1,15 +1,17 @@
 # -*- coding: utf-8 -*-
 
+""" Модуль содержит Spider - один из основных классов в архитектуре Scrapy, который осуществляет звгрузку и парсинг
+веб-страниц.
+"""
+
 from scrapy.selector import HtmlXPathSelector
 from scrapy.contrib.spiders import CrawlSpider, Rule
 from scrapy.contrib.linkextractors.sgml import SgmlLinkExtractor
-from models import ProductItem, RestoranItem, ProductPortionItem, ProductConnectionItem, ReadAllItemsFromDB
+from models import ProductItem, ProductPortionItem, ProductConnectionItem, ReadAllItemsFromDB
 import re
 from scrapy import log
 from time import sleep
 from urllib import urlopen
-
-stop_functions = []
 
 def _msg_encode(s):
     return s.encode('cp1251')
@@ -24,6 +26,9 @@ def _items_index2(items,field1,value1,field2,value2):
 
 
 class HPizzaSpider(CrawlSpider):
+    """ Spider - один из основных классов в аржитектуре Scrapy. Осуществляет выбор, загрузку и анализ веб-страниц.
+    Выполняет операцию по одному сайту, соответствующему одному ресторану.
+    """
     name = "hpizza"
     allowed_domains = ["www.hardpizza.ru"]
     start_urls = ["http://www.hardpizza.ru/", ]
@@ -37,6 +42,10 @@ class HPizzaSpider(CrawlSpider):
 
 
     def __init__(self, restoran_mame='Hard Pizza', *a, **kw):
+        """ В качестве именованного документа может принять лююлй из атрибутов объекта.
+        Помимо инициализации служебных атрибутов выполняет считывание информации по ресторану из Django-модели в
+        набор соответстующих списков Item-ов для использования при анализе информации во время парсинга.
+        """
         self.valuestr_len = len(self.valuestr)
         self.findstr_len = len(self.findstr)
         self.new_products_ind=100
@@ -44,6 +53,10 @@ class HPizzaSpider(CrawlSpider):
         super (HPizzaSpider,self).__init__(*a, **kw)
 
     def parse_item (self, response):
+        """ Выполняет парсинг и анализ одной веб-страницы. При анализе испольует информацию из модели Django, но
+        не напрямую, а из созданного при иницпиализации набора Item'ов. Возвращает список разнотипных Item'ов, которые
+        Scrapy-engine передает потоку сохранения (pipeline).
+        """
         log.msg('Start parsing '+response.url,level=log.INFO,spider=self)
         hxs = HtmlXPathSelector(response)
         list_rows = hxs.select('//*[@class="row"]')
